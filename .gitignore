@@ -4,5 +4,8 @@
 .DS_Store
 raw_data/
 *.csv
+*.pkl
+# *.ipynb
+# notebooks/
 **/__pycache__/
 .env
