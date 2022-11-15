@@ -1,4 +1,6 @@
 import time
+import requests
+import io
 import numpy as np
 import pandas as pd
 # settings to display all columns
@@ -58,10 +60,13 @@ class ModelGenerator():
         # Create directory for saving
         if city == 'allcities':
             self.model_path = f'wg_price_predictor/models'
-            self.model_name = f'Pred_pipeline_{market_type_filter}_allcities'
+            self.model_name = f'PredPipeline_{market_type_filter}_allcities_{self.target}'
         else:
             self.model_path = f'wg_price_predictor/models/{standardize_characters(city)}'
-            self.model_name = f'Pred_pipeline_{market_type_filter}'
+            self.model_name = f'PredPipeline_{market_type_filter}_{self.target}'
+
+        if target_log_transform:
+            self.model_name = self.model_name+'_LogTarget'
 
         create_dir(path = self.model_path)
 
@@ -70,7 +75,8 @@ class ModelGenerator():
 
         ## Main dataframe
         # ads_OSM.csv is the product of running get_processed_ads_table() in ads_table_processing.py in housing_crawler
-        self.df_filtered = get_file(file_name='ads_OSM.csv', local_file_path=f'wg_price_predictor/data')
+        download = requests.get('https://raw.githubusercontent.com/chvieira2/housing_crawler/master/housing_crawler/data/ads_OSM.csv').content
+        self.df_filtered = pd.read_csv(io.StringIO(download.decode('utf-8')))
 
         # Filter only ads that have been searched for details (search added from august on)
         self.df_filtered = self.df_filtered[self.df_filtered['details_searched']==1]
@@ -177,9 +183,11 @@ class ModelGenerator():
 
         # cols_PowerTrans_SimpImpMean
         if market_type_filter == 'WG':
-            self.cols_PowerTrans_SimpImpMean = ['km_to_centroid',#'size_sqm',
+            self.cols_PowerTrans_SimpImpMean = ['km_to_centroid',
                                         'min_age_flatmates', 'max_age_flatmates', 'home_total_size', 'days_available',
                                         'room_size_house_fraction','energy_usage']
+            if self.target == 'price_euros':
+                self.cols_PowerTrans_SimpImpMean = self.cols_PowerTrans_SimpImpMean + ['size_sqm']
         else:
             self.cols_PowerTrans_SimpImpMean = ['km_to_centroid', 'days_available',
                                         'construction_year','energy_usage']
@@ -608,13 +616,13 @@ class ModelGenerator():
                                                 'NeuralNetwork',
                                                 'Ridge',
                                                 'Lasso',
-                                                # 'ElasticNet',
+                                                'ElasticNet',
                                                 'SGDRegressor',
-                                                # 'KNeighborsRegressor',
-                                                # 'SVR',
-                                                # 'DecisionTreeRegressor',
-                                                # 'RandomForestRegressor',
-                                                # 'GradientBoostingRegressor',
+                                                'KNeighborsRegressor',
+                                                'SVR',
+                                                'DecisionTreeRegressor',
+                                                'RandomForestRegressor',
+                                                'GradientBoostingRegressor',
                                                 'XGBRegressor'
                                                 ], n_splits = 10):
         """
@@ -700,7 +708,7 @@ class ModelGenerator():
                                 search_space = {
                                                 'alpha': [0.001,0.01,0.1,1,10,100],
                                                 'tol': [0.001,0.01,0.1,1,10,100],
-                                                'solver': ['lsqr','auto']# auto, 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga', 'lbfgs']
+                                                'solver': ['auto']#, 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']#, 'lbfgs']
                                             })
             models_parametrized.append(Ridge_rsearch)
             models_names.append(model_name)
@@ -974,20 +982,22 @@ class ModelGenerator():
                   local_file_path=self.model_path)
 
         # Load Pipeline from pickle file
-        # pred_pipeline = pickle.load(open("pred_pipeline_allcities.pkl","rb"))
+        # pred_pipeline = pickle.load(open("Pred_pipeline_allcities.pkl","rb"))
 
         return self.pred_pipeline
 
 
 
 if __name__ == "__main__":
+
     didnt_work = []
     models_to_create = ['allcities']# + list(dict_city_number_wggesucht.keys())
     for city in models_to_create:
-        for offer_type in ['WG', 'Single-room flat', 'Apartment']: #'WG', 'Single-room flat', 'Apartment'
+        for offer_type in ['WG']:#, 'Single-room flat', 'Apartment']: #'WG', 'Single-room flat', 'Apartment'
             try:
                 ModelGenerator(market_type_filter = offer_type,
-                    target='price_per_sqm_cold', target_log_transform = False,
+                    target='price_euros', # 'price_per_sqm_cold'
+                    target_log_transform = False,
                     city=city).save_best_model()
             except:
                 didnt_work.append(city+'+'+offer_type)
