@@ -1,74 +1,20 @@
-# Data analysis
-- Document here the project: wg_price_predictor
-- Description: Project Description
-- Data Source:
-- Type of analysis:
+Following the analysis of the WG (flatshare) market in Germany performed in [housing_crawler](https://github.com/chvieira2/housing_crawler), I decided to create a predictive model of prices. This model will then be used to decide whether the rental prices offered in [Livablestreets](https://livablestreets.herokuapp.com/) are fair. That's another step in helping people find their next home!
 
-Please document the project the better you can.
 
-# Startup the project
+## What is the data?
+WG ads in wg-gesucht.de are collect by the [housing_crawler](https://github.com/chvieira2/housing_crawler) app since August 2022. With roughly 750 new offers posted everyday, this dataset is fast growing. Collected data include information on the size and type of WG and on physical characteristics of the flatshare.
+On top of that, I incorporate to the set of data collected per WG the life quality measurements produced by [livablestreets](https://github.com/chvieira2/livablestreets). For every address, I add information on surrounding city objects like streets, banks, stores, parks, lakes, etc.
 
-The initial setup.
+So far, the dataset comprises >50.000 entries and >150 features.
 
-Create virtualenv and install the project:
-```bash
-sudo apt-get install virtualenv python-pip python-dev
-deactivate; virtualenv ~/venv ; source ~/venv/bin/activate ;\
-    pip install pip -U; pip install -r requirements.txt
-```
 
-Unittest test:
-```bash
-make clean install test
-```
+## Creating a predictive model
+The predictive model was created using sklearn's Pipeline module. The creation of the predictive model pipeline consists of three steps:
+1. First, I encoded categorical features and transformed and scaled numerical features with PowerScaling and either MinMax or Standard scalling.
+2. Next, I identified the most relevant numerical features in three ways:
+- **Minimizing**: Numeric features with too little information were removed from analysis. This is meant to improve prediction by reducing dimentionality, as numerical features with identical values in all entries carry little to no information.
+- **Variance Inflation Factor (VIF)**: Analysis of VIF was used to identify multi-colliniarity between features. Features with VIF higher than 10 were systematically excluded.
+- **Permutation importance**: Analysis of feature importance by permutation was used to identify features with significant impact on the model. Features with low importance (<0.001) were systematically excluded.
+3. Several regression models were automatically searched and cross-validated with GridSearchCV. Tested models include regularized linear models, neighbors clustering models, support vector machine models, bagged and stacked decision trees models, and a neural network. The best version of each model was KFold validated and the best scoring method selected.
 
-Check for wg_price_predictor in gitlab.com/{group}.
-If your project is not set please add it:
-
-- Create a new project on `gitlab.com/{group}/wg_price_predictor`
-- Then populate it:
-
-```bash
-##   e.g. if group is "{group}" and project_name is "wg_price_predictor"
-git remote add origin git@github.com:{group}/wg_price_predictor.git
-git push -u origin master
-git push -u origin --tags
-```
-
-Functionnal test with a script:
-
-```bash
-cd
-mkdir tmp
-cd tmp
-wg_price_predictor-run
-```
-
-# Install
-
-Go to `https://github.com/{group}/wg_price_predictor` to see the project, manage issues,
-setup you ssh public key, ...
-
-Create a python3 virtualenv and activate it:
-
-```bash
-sudo apt-get install virtualenv python-pip python-dev
-deactivate; virtualenv -ppython3 ~/venv ; source ~/venv/bin/activate
-```
-
-Clone the project and install it:
-
-```bash
-git clone git@github.com:{group}/wg_price_predictor.git
-cd wg_price_predictor
-pip install -r requirements.txt
-make clean install test                # install and test
-```
-Functionnal test with a script:
-
-```bash
-cd
-mkdir tmp
-cd tmp
-wg_price_predictor-run
-```
+Finally, the best model was included into the processing pipeline to create the final predictive model pipeline that has been trained in the whole dataset. 
