@@ -36,7 +36,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
 import pickle
-import joblib
+import cloudpickle
 
 
 from wg_price_predictor.utils import report_best_scores, create_dir, save_file, get_file
@@ -984,14 +984,14 @@ class ModelGenerator():
         print('\n')
 
         with open(f"{ROOT_DIR}/{self.model_path}/{self.model_name}.pkl", "wb") as file:
-            joblib.dump(self.pred_pipeline, file)
+            cloudpickle.dump(self.pred_pipeline, file)
 
 
         save_file(df = self.model_metrics, file_name=f'{self.model_name}.csv',
                   local_file_path=self.model_path)
 
         # Load Pipeline from pickle file
-        # pred_pipeline = joblib.load(open("Pred_pipeline_allcities.pkl","rb"))
+        # pred_pipeline = cloudpickle.load(open("Pred_pipeline_allcities.pkl","rb"))
 
         return self.pred_pipeline
 
