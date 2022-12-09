@@ -29,4 +29,3 @@ xgboost
 # joblib
 # memoized-property
 # termcolor
-pickle

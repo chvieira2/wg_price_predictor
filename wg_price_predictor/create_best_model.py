@@ -57,6 +57,8 @@ class ModelGenerator():
         print('='*len(foo))
         print('\n')
 
+        self.target = target
+
         # Create directory for saving
         if city == 'allcities':
             self.model_path = f'wg_price_predictor/models'
@@ -70,7 +72,6 @@ class ModelGenerator():
 
         create_dir(path = self.model_path)
 
-        self.target = target
         self.columns_to_remove = []
 
         ## Main dataframe
@@ -613,17 +614,17 @@ class ModelGenerator():
         return model
 
     def find_best_model(self, models_to_test = [
-                                                'NeuralNetwork',
+                                                # 'NeuralNetwork',
                                                 'Ridge',
-                                                'Lasso',
-                                                'ElasticNet',
-                                                'SGDRegressor',
-                                                'KNeighborsRegressor',
-                                                'SVR',
-                                                'DecisionTreeRegressor',
-                                                'RandomForestRegressor',
-                                                'GradientBoostingRegressor',
-                                                'XGBRegressor'
+                                                # 'Lasso',
+                                                # 'ElasticNet',
+                                                # 'SGDRegressor',
+                                                # 'KNeighborsRegressor',
+                                                # 'SVR',
+                                                # 'DecisionTreeRegressor',
+                                                # 'RandomForestRegressor',
+                                                # 'GradientBoostingRegressor',
+                                                # 'XGBRegressor'
                                                 ], n_splits = 10):
         """
         This function will find the best hyperparameter for several possible models.
@@ -735,8 +736,8 @@ class ModelGenerator():
             ElasticNet_rsearch,model_name = self.hyperparametrization(X,y, model = ElasticNet(),
                                 search_space = {
                                                 'alpha': [0.001,0.01,0.1,1,10,100],
-                                                'tol': [0.1],#[0.001,0.01,0.1,1,10,100],
-                                                'l1_ratio': [0,0.3,0.6,1],
+                                                'tol': [0.001,0.01,0.1,1,10,100],
+                                                'l1_ratio': [0.1,0.3,0.6,1],
                                                 'selection': ['cyclic', 'random']
                                                 })
             models_parametrized.append(ElasticNet_rsearch)
@@ -753,7 +754,7 @@ class ModelGenerator():
     'alpha': [0.0001, 0.001,0.01],
     'penalty': ['l1','l2','elasticnet'],
     'tol': [1,10,100],
-    'l1_ratio': [0,0.3,0.6,1],
+    'l1_ratio': [0.1,0.3,0.6,1],
     'epsilon': [0.1,1,10],
     'learning_rate': ['invscaling'],#,'constant','optimal','adaptive'],
     # 'eta0': [0.001,0.01,0.1],
@@ -994,12 +995,12 @@ if __name__ == "__main__":
     models_to_create = ['allcities']# + list(dict_city_number_wggesucht.keys())
     for city in models_to_create:
         for offer_type in ['WG']:#, 'Single-room flat', 'Apartment']: #'WG', 'Single-room flat', 'Apartment'
-            try:
+            # try:
                 ModelGenerator(market_type_filter = offer_type,
-                    target='price_euros', # 'price_per_sqm_cold'
+                    target='price_per_sqm_cold', # 'price_per_sqm_cold','price_euros'
                     target_log_transform = False,
                     city=city).save_best_model()
-            except:
-                didnt_work.append(city+'+'+offer_type)
+            # except:
+            #     didnt_work.append(city+'+'+offer_type)
 
     print(didnt_work)
