@@ -10,6 +10,7 @@ pandas
 scikit-learn
 tensorflow
 xgboost
+cloudpickle
 
 # tests/linter
 # black

@@ -36,6 +36,8 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
 import pickle
+import joblib
+
 
 from wg_price_predictor.utils import report_best_scores, create_dir, save_file, get_file
 from config.config import ROOT_DIR
@@ -59,25 +61,17 @@ class ModelGenerator():
 
         self.target = target
 
-        # Create directory for saving
-        if city == 'allcities':
-            self.model_path = f'wg_price_predictor/models'
-            self.model_name = f'PredPipeline_{market_type_filter}_allcities_{self.target}'
-        else:
-            self.model_path = f'wg_price_predictor/models/{standardize_characters(city)}'
-            self.model_name = f'PredPipeline_{market_type_filter}_{self.target}'
-
-        if target_log_transform:
-            self.model_name = self.model_name+'_LogTarget'
-
-        create_dir(path = self.model_path)
-
-        self.columns_to_remove = []
-
-        ## Main dataframe
+        ### Main dataframe
         # ads_OSM.csv is the product of running get_processed_ads_table() in ads_table_processing.py in housing_crawler
-        download = requests.get('https://raw.githubusercontent.com/chvieira2/housing_crawler/master/housing_crawler/data/ads_OSM.csv').content
-        self.df_filtered = pd.read_csv(io.StringIO(download.decode('utf-8')))
+        monthly = []
+        for month in ['07','08','09','10','11','12']:
+            download = requests.get(f'https://raw.githubusercontent.com/chvieira2/housing_crawler/master/raw_data/2022{month}_ads_OSM.csv').content
+            monthly.append(pd.read_csv(io.StringIO(download.decode('utf-8'))))
+            del month
+
+        self.df_filtered = pd.concat(monthly)
+        del monthly
+        self.df_filtered = self.df_filtered[~pd.isnull(self.df_filtered[target])]
 
         # Filter only ads that have been searched for details (search added from august on)
         self.df_filtered = self.df_filtered[self.df_filtered['details_searched']==1]
@@ -97,7 +91,22 @@ class ModelGenerator():
             self.model_name = self.model_name + '_targetLogTrans'
 
 
-        ## Creates the list of features according to the processing pipeline they will be processed by
+        ### Create directory for saving
+        if city == 'allcities':
+            self.model_path = f'wg_price_predictor/models'
+            self.model_name = f'PredPipeline_{market_type_filter}_allcities_{self.target}'
+        else:
+            self.model_path = f'wg_price_predictor/models/{standardize_characters(city)}'
+            self.model_name = f'PredPipeline_{market_type_filter}_{self.target}'
+
+        if target_log_transform:
+            self.model_name = self.model_name+'_LogTarget'
+
+        create_dir(path = self.model_path)
+
+        self.columns_to_remove = []
+
+        ### Creates the list of features according to the processing pipeline they will be processed by
         features_OSM = [
                 'comfort_leisure_spots',
                 'comfort_warehouse',
@@ -955,8 +964,7 @@ class ModelGenerator():
 
     def save_best_model(self):
         """
-        This function will create and save the full, fitted pipeline. The full pipeline receives a dataframe directly from get_processed_ads_table() (that is optionally filtered) and returns the best predictive model.
-        This best model is also saved locally.
+        This function will create and save the full, fitted pipeline. The full pipeline receives a dataframe directly from get_processed_ads_table() in ads_table_processing.py in housing_crawler and returns the best predictive model. This best model is also saved locally with the evaluation analysis.
         """
         if self.preprocessor_analysed is None:
             self.define_preprocessing_after_analysis()
@@ -976,14 +984,14 @@ class ModelGenerator():
         print('\n')
 
         with open(f"{ROOT_DIR}/{self.model_path}/{self.model_name}.pkl", "wb") as file:
-            pickle.dump(self.pred_pipeline, file)
+            joblib.dump(self.pred_pipeline, file)
 
 
         save_file(df = self.model_metrics, file_name=f'{self.model_name}.csv',
                   local_file_path=self.model_path)
 
         # Load Pipeline from pickle file
-        # pred_pipeline = pickle.load(open("Pred_pipeline_allcities.pkl","rb"))
+        # pred_pipeline = joblib.load(open("Pred_pipeline_allcities.pkl","rb"))
 
         return self.pred_pipeline
 
