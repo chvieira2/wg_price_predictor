@@ -488,7 +488,7 @@ class ModelGenerator():
 
     def define_preprocessing_after_analysis(self):
         """
-        Creates the preprocessing backbone after features have been analysed. This function is ideantical to define_preprocessing_backbone() except that it excludes from the model features identified during analysis.
+        Creates the preprocessing backbone after features have been analysed. This function is identical to define_preprocessing_backbone() except that it excludes from the model features identified during analysis.
         """
 
         # Identify the columns that should be removed
@@ -634,13 +634,15 @@ class ModelGenerator():
                                                 # 'RandomForestRegressor',
                                                 # 'GradientBoostingRegressor',
                                                 # 'XGBRegressor'
-                                                ], n_splits = 10):
+                                                ], n_splits = 10,
+                        minimization_analysis = False, VIF_analysis = False, Permutation_analysis = False):
         """
         This function will find the best hyperparameter for several possible models.
         """
         models_names = []
         if self.preprocessor_analysed is None:
-            self.define_preprocessing_after_analysis()
+            # self.define_preprocessing_after_analysis()
+            self.preprocessor_analysed = self.define_preprocessing_backbone()
 
         # Get transformed table with corresponding column names for hyperparametrization
         X = pd.DataFrame(self.preprocessor_analysed.fit_transform(self.df_filtered),
@@ -962,9 +964,9 @@ class ModelGenerator():
         print(self.model_metrics)
         print('\n')
 
-    def save_best_model(self):
+    def save_best_model(self, fitted = False):
         """
-        This function will create and save the full, fitted pipeline. The full pipeline receives a dataframe directly from get_processed_ads_table() in ads_table_processing.py in housing_crawler and returns the best predictive model. This best model is also saved locally with the evaluation analysis.
+        This function will create and save the full, pipeline. The full pipeline receives a dataframe directly from get_processed_ads_table() in ads_table_processing.py in housing_crawler and returns the best predictive model. This best model is also saved locally with the evaluation analysis.
         """
         if self.preprocessor_analysed is None:
             self.define_preprocessing_after_analysis()
@@ -976,14 +978,15 @@ class ModelGenerator():
         self.pred_pipeline = make_pipeline(self.preprocessor_analysed,self.model)
 
         # Fit model on the full dataset
-        self.pred_pipeline = self.pred_pipeline.fit(self.df_filtered.drop(columns=self.target), self.df_filtered[self.target])
+        if fitted:
+            self.pred_pipeline = self.pred_pipeline.fit(self.df_filtered.drop(columns=self.target), self.df_filtered[self.target])
 
         # Export Pipeline as pickle file
         print('=========================')
         print(f'Saving predictive pipeline {self.model_path}/{self.model_name}')
         print('\n')
 
-        with open(f"{ROOT_DIR}/{self.model_path}/{self.model_name}.pkl", "wb") as file:
+        with open(f"{ROOT_DIR}/{self.model_path}/{self.model_name}_{'trained' if fitted else 'untrained'}.pkl", "wb") as file:
             cloudpickle.dump(self.pred_pipeline, file)
 
 
