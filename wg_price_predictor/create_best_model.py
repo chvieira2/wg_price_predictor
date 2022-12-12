@@ -452,7 +452,7 @@ class ModelGenerator():
         self.columns_to_remove = self.columns_to_remove + columns_excluded_permutation
         return df_permuted.drop(columns=columns_excluded_permutation)
 
-    def identify_num_cols_to_remove(self):
+    def identify_num_cols_to_remove(self, minimization_analysis = False, VIF_analysis = False, Permutation_analysis = False):
         """
         Creates a list of column names to be ignored during modelling.
         """
@@ -474,14 +474,25 @@ class ModelGenerator():
         print('Ignoring OHE columns for analysis...')
 
         ## Apply minimization
-        df_minimal = self.minimize_features(df_processed)
-        print('Finished Minimizing features')
+        if minimization_analysis:
+            df_minimal = self.minimize_features(df_processed)
+            print('Finished Minimizing features')
+        else:
+            df_minimal = df_processed.copy()
+
         ## Apply colinearity VIF analyis
-        df_VIF = self.VIF_colinearity_analysis(df_minimal)
-        print('Finished colinearity analysis')
+        if VIF_analysis:
+            df_VIF = self.VIF_colinearity_analysis(df_minimal)
+            print('Finished colinearity analysis')
+        else:
+            df_VIF = df_minimal.copy()
+
         ## Apply permutation importance analysis
-        df_permuted = self.feature_importance_permutation(df_VIF)
-        print('Finished permutation importance analysis')
+        if Permutation_analysis:
+            df_permuted = self.feature_importance_permutation(df_VIF)
+            print('Finished permutation importance analysis')
+        else:
+            df_permuted = df_VIF.copy()
 
         # Return the analysed dataframe
         return df_permuted
@@ -622,27 +633,25 @@ class ModelGenerator():
 
         return model
 
-    def find_best_model(self, models_to_test = [
-                                                # 'NeuralNetwork',
+    def find_best_model(self, n_splits = 10, models_to_test = [
+                                                'NeuralNetwork',
                                                 'Ridge',
-                                                # 'Lasso',
-                                                # 'ElasticNet',
-                                                # 'SGDRegressor',
-                                                # 'KNeighborsRegressor',
-                                                # 'SVR',
-                                                # 'DecisionTreeRegressor',
-                                                # 'RandomForestRegressor',
-                                                # 'GradientBoostingRegressor',
-                                                # 'XGBRegressor'
-                                                ], n_splits = 10,
-                        minimization_analysis = False, VIF_analysis = False, Permutation_analysis = False):
+                                                'Lasso',
+                                                'ElasticNet',
+                                                'SGDRegressor',
+                                                'KNeighborsRegressor',
+                                                'SVR',
+                                                'DecisionTreeRegressor',
+                                                'RandomForestRegressor',
+                                                'GradientBoostingRegressor',
+                                                'XGBRegressor'
+                                                ]):
         """
         This function will find the best hyperparameter for several possible models.
         """
         models_names = []
         if self.preprocessor_analysed is None:
-            # self.define_preprocessing_after_analysis()
-            self.preprocessor_analysed = self.define_preprocessing_backbone()
+            self.define_preprocessing_after_analysis(minimization_analysis = False, VIF_analysis = False, Permutation_analysis = False)
 
         # Get transformed table with corresponding column names for hyperparametrization
         X = pd.DataFrame(self.preprocessor_analysed.fit_transform(self.df_filtered),
