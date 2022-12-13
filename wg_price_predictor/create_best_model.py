@@ -566,6 +566,7 @@ class ModelGenerator():
 
     def hyperparametrization(self,X,y, model,
                              search_space, scoring='neg_root_mean_squared_error'):
+                                 #scoring='neg_mean_absolute_error'):
 
         # Instanciate GridSearchCV
         rsearch = GridSearchCV(
@@ -634,17 +635,17 @@ class ModelGenerator():
         return model
 
     def find_best_model(self, n_splits = 10, models_to_test = [
-                                                'NeuralNetwork',
+                                                # 'NeuralNetwork',
                                                 'Ridge',
-                                                'Lasso',
-                                                'ElasticNet',
-                                                'SGDRegressor',
-                                                'KNeighborsRegressor',
-                                                'SVR',
-                                                'DecisionTreeRegressor',
-                                                'RandomForestRegressor',
-                                                'GradientBoostingRegressor',
-                                                'XGBRegressor'
+                                                # 'Lasso',
+                                                # 'ElasticNet',
+                                                # 'SGDRegressor',
+                                                # 'KNeighborsRegressor',
+                                                # 'SVR',
+                                                # 'DecisionTreeRegressor',
+                                                # 'RandomForestRegressor',
+                                                # 'GradientBoostingRegressor',
+                                                # 'XGBRegressor'
                                                 ]):
         """
         This function will find the best hyperparameter for several possible models.
@@ -791,10 +792,10 @@ class ModelGenerator():
             print('\n')
             KNeighborsRegressor_rsearch,model_name = self.hyperparametrization(X,y, model = KNeighborsRegressor(),
                                 search_space = {
-    'n_neighbors': range(20,50,3),
+    'n_neighbors': range(15,40,5),
     'weights': ['uniform', 'distance'],
     'algorithm': ['ball_tree', 'kd_tree', 'brute'],
-    'leaf_size': range(2,10,1)
+    'leaf_size': range(2,10,2)
 })
             models_parametrized.append(KNeighborsRegressor_rsearch)
             models_names.append(model_name)
