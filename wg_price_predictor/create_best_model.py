@@ -635,17 +635,17 @@ class ModelGenerator():
         return model
 
     def find_best_model(self, n_splits = 10, models_to_test = [
-                                                # 'NeuralNetwork',
+                                                'NeuralNetwork',
                                                 'Ridge',
-                                                # 'Lasso',
-                                                # 'ElasticNet',
-                                                # 'SGDRegressor',
-                                                # 'KNeighborsRegressor',
+                                                'Lasso',
+                                                'ElasticNet',
+                                                'SGDRegressor',
+                                                'KNeighborsRegressor',
                                                 # 'SVR',
-                                                # 'DecisionTreeRegressor',
+                                                'DecisionTreeRegressor',
                                                 # 'RandomForestRegressor',
-                                                # 'GradientBoostingRegressor',
-                                                # 'XGBRegressor'
+                                                'GradientBoostingRegressor',
+                                                'XGBRegressor'
                                                 ]):
         """
         This function will find the best hyperparameter for several possible models.
