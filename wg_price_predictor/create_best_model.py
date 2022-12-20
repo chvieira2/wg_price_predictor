@@ -76,10 +76,10 @@ class ModelGenerator():
         # Filter only ads that have been searched for details (search added from august on)
         self.df_filtered = self.df_filtered[self.df_filtered['details_searched']==1]
         # Filter ad maket type
-        self.df_filtered = self.df_filtered[self.df_filtered['type_offer_simple']==market_type_filter]
+        # self.df_filtered = self.df_filtered[self.df_filtered['type_offer_simple']==market_type_filter]
         # Filter ads with address
         self.df_filtered = self.df_filtered[self.df_filtered['km_to_centroid'].notna()]
-        self.df_filtered = self.df_filtered.drop(columns=['details_searched','type_offer_simple'])
+        self.df_filtered = self.df_filtered.drop(columns=['details_searched'])#,'type_offer_simple'])
         self.df_filtered = self.df_filtered.set_index('id')
 
         if city != 'allcities':
@@ -242,9 +242,9 @@ class ModelGenerator():
 
         # cols_SimpImpConstNoAns_OHE
         if market_type_filter == 'WG':
-            self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','gender_searched','building_type','heating', 'parking','age_category_searched']
+            self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','gender_searched','building_type','heating', 'parking','age_category_searched','type_offer_simple']
         else:
-            self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','building_type','heating', 'parking']
+            self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','building_type','heating', 'parking','type_offer_simple']
 
         if city == 'allcities':
             self.cols_SimpImpConstNoAns_OHE += ['city']
@@ -637,14 +637,14 @@ class ModelGenerator():
     def find_best_model(self, n_splits = 10, models_to_test = [
                                                 'NeuralNetwork',
                                                 'Ridge',
-                                                'Lasso',
-                                                'ElasticNet',
-                                                'SGDRegressor',
-                                                'KNeighborsRegressor',
+                                                # 'Lasso',
+                                                # 'ElasticNet',
+                                                # 'SGDRegressor',
+                                                # 'KNeighborsRegressor',
                                                 # 'SVR',
-                                                'DecisionTreeRegressor',
+                                                # 'DecisionTreeRegressor',
                                                 # 'RandomForestRegressor',
-                                                'GradientBoostingRegressor',
+                                                # 'GradientBoostingRegressor',
                                                 'XGBRegressor'
                                                 ]):
         """
@@ -674,8 +674,8 @@ class ModelGenerator():
                 tf.random.set_seed(42)
                 # Hyperparameter search space
                 search_space = {
-                    'epochs': [30],#[50, 100, 150],
-                    'batch_size': [16,32,64],
+                    'epochs': [30,50],#[50, 100, 150],
+                    'batch_size': [8,16,32,64],
 #                     'model__n_neurons_layer1': [16,32,64],
 #                     'model__n_neurons_layer2': [0],#[16,32,64],
                     # 'model__n_neurons_layer3': [0],#[16,32,64],
