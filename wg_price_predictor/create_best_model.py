@@ -17,7 +17,7 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV, KFold
 
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet, SGDRegressor
+from sklearn.linear_model import Ridge, Lasso, ElasticNet, SGDRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
@@ -30,25 +30,23 @@ from xgboost import XGBRegressor
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.constraints import MaxNorm
 from scikeras.wrappers import KerasRegressor
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
-import pickle
+# import pickle
 import cloudpickle
 
 
-from wg_price_predictor.utils import report_best_scores, create_dir, save_file, get_file
+from wg_price_predictor.utils import report_best_scores, create_dir, save_file
 from config.config import ROOT_DIR
-from wg_price_predictor.params import dict_city_number_wggesucht
 from wg_price_predictor.string_utils import standardize_characters
 
 
 class ModelGenerator():
     """Implementation of a class that creates the best model for predicting prices"""
 
-    def __init__(self, market_type_filter = 'WG', # WG, Single-room flat, Apartment
+    def __init__(self, market_type_filter = 'WG', # WG, Single-room flat, Apartment, None
                  target='price_per_sqm_cold', # price_per_sqm_cold, price_euros
                  target_log_transform = False,
                  city='allcities'):
@@ -76,7 +74,8 @@ class ModelGenerator():
         # Filter only ads that have been searched for details (search added from august on)
         self.df_filtered = self.df_filtered[self.df_filtered['details_searched']==1]
         # Filter ad maket type
-        # self.df_filtered = self.df_filtered[self.df_filtered['type_offer_simple']==market_type_filter]
+        if market_type_filter is not None:
+            self.df_filtered = self.df_filtered[self.df_filtered['type_offer_simple']==market_type_filter]
         # Filter ads with address
         self.df_filtered = self.df_filtered[self.df_filtered['km_to_centroid'].notna()]
         self.df_filtered = self.df_filtered.drop(columns=['details_searched'])#,'type_offer_simple'])
@@ -86,20 +85,18 @@ class ModelGenerator():
             self.df_filtered = self.df_filtered[self.df_filtered['city']==city]
             self.df_filtered = self.df_filtered.drop(columns=['city'])
 
-        if target_log_transform:
-            self.df_filtered[self.target] = np.log2(self.df_filtered[self.target])
-            self.model_name = self.model_name + '_targetLogTrans'
-
 
         ### Create directory for saving
         if city == 'allcities':
             self.model_path = f'wg_price_predictor/models'
-            self.model_name = f'PredPipeline_{market_type_filter}_allcities_{self.target}'
+            self.model_name = f'PredPipeline{"" if market_type_filter is None else "_" + market_type_filter}_allcities_{self.target}'
         else:
             self.model_path = f'wg_price_predictor/models/{standardize_characters(city)}'
-            self.model_name = f'PredPipeline_{market_type_filter}_{self.target}'
+            self.model_name = f'PredPipeline_{"" if market_type_filter is None else "_" + market_type_filter}_{self.target}'
+
 
         if target_log_transform:
+            self.df_filtered[self.target] = np.log2(self.df_filtered[self.target])
             self.model_name = self.model_name+'_LogTarget'
 
         create_dir(path = self.model_path)
@@ -674,8 +671,8 @@ class ModelGenerator():
                 tf.random.set_seed(42)
                 # Hyperparameter search space
                 search_space = {
-                    'epochs': [30,50],#[50, 100, 150],
-                    'batch_size': [8,16,32,64],
+                    'epochs': [100],#[50, 100, 150],
+                    'batch_size': [256],
 #                     'model__n_neurons_layer1': [16,32,64],
 #                     'model__n_neurons_layer2': [0],#[16,32,64],
                     # 'model__n_neurons_layer3': [0],#[16,32,64],
@@ -956,8 +953,6 @@ class ModelGenerator():
 
 
 
-
-
         means_df = scores.groupby('model').mean().round(3)
         std_df = scores.groupby('model').std().round(3)
         std_df.columns= [col+'_std' for col in std_df.columns]
@@ -1013,15 +1008,16 @@ class ModelGenerator():
 if __name__ == "__main__":
 
     didnt_work = []
-    models_to_create = ['allcities']# + list(dict_city_number_wggesucht.keys())
-    for city in models_to_create:
-        for offer_type in ['WG']:#, 'Single-room flat', 'Apartment']: #'WG', 'Single-room flat', 'Apartment'
-            # try:
-                ModelGenerator(market_type_filter = offer_type,
-                    target='price_per_sqm_cold', # 'price_per_sqm_cold','price_euros'
-                    target_log_transform = False,
-                    city=city).save_best_model()
-            # except:
-            #     didnt_work.append(city+'+'+offer_type)
+    for _city in ['allcities']:# + list(dict_city_number_wggesucht.keys()):
+        for _offer_type in ['WG', 'Single-room flat', 'Apartment', None]: #'WG', 'Single-room flat', 'Apartment', None
+            for _target in ['price_per_sqm_cold','price_euros']: #'price_per_sqm_cold','price_euros'
+                for _transform in [True, False]:
+                    try:
+                        ModelGenerator(market_type_filter = _offer_type,
+                            target=_target,
+                            target_log_transform = _transform,
+                            city=_city).save_best_model()
+                    except:
+                        didnt_work.append(_city+'+'+str(_offer_type)+'+'+_target+'+'+str(_transform))
 
     print(didnt_work)
