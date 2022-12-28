@@ -62,7 +62,7 @@ class ModelGenerator():
         ### Main dataframe
         # ads_OSM.csv is the product of running get_processed_ads_table() in ads_table_processing.py in housing_crawler
         monthly = []
-        for month in ['07','08','09','10','11','12']:
+        for month in ['08','09','10','11','12']:
             download = requests.get(f'https://raw.githubusercontent.com/chvieira2/housing_crawler/master/raw_data/2022{month}_ads_OSM.csv').content
             monthly.append(pd.read_csv(io.StringIO(download.decode('utf-8'))))
             del month
@@ -77,7 +77,7 @@ class ModelGenerator():
         if market_type_filter is not None:
             self.df_filtered = self.df_filtered[self.df_filtered['type_offer_simple']==market_type_filter]
         # Filter ads with address
-        self.df_filtered = self.df_filtered[self.df_filtered['km_to_centroid'].notna()]
+        # self.df_filtered = self.df_filtered[self.df_filtered['km_to_centroid'].notna()]
         self.df_filtered = self.df_filtered.drop(columns=['details_searched'])#,'type_offer_simple'])
         self.df_filtered = self.df_filtered.set_index('id')
 
@@ -175,7 +175,7 @@ class ModelGenerator():
                        'wg_possible',
 
                        'internet_dsl','internet_wlan','internet_flatrate']
-        else:
+        elif market_type_filter == 'Single-room flat':
             self.features_already_OHE = ['tv_kabel','tv_satellit',
 
                         'shower_type_badewanne','shower_type_dusche',
@@ -186,6 +186,29 @@ class ModelGenerator():
                        'extras_waschmaschine','extras_spuelmaschine','extras_terrasse','extras_balkon',
                        'extras_garten','extras_gartenmitbenutzung','extras_keller','extras_aufzug',
                        'extras_haustiere','extras_fahrradkeller','extras_dachboden']
+        else:
+            self.features_already_OHE = ['tv_kabel','tv_satellit',
+
+                        'shower_type_badewanne','shower_type_dusche',
+
+                       'floor_type_dielen','floor_type_parkett','floor_type_laminat','floor_type_teppich',
+                       'floor_type_fliesen','floor_type_pvc','floor_type_fußbodenheizung',
+
+                       'extras_waschmaschine','extras_spuelmaschine','extras_terrasse','extras_balkon',
+                       'extras_garten','extras_gartenmitbenutzung','extras_keller','extras_aufzug',
+                       'extras_haustiere','extras_fahrradkeller','extras_dachboden',
+
+                       'languages_deutsch','languages_englisch',
+
+                       'wg_type_studenten','wg_type_keine_zweck','wg_type_maenner','wg_type_business',
+                       'wg_type_wohnheim','wg_type_vegetarisch_vegan','wg_type_alleinerziehende','wg_type_funktionale',
+                       'wg_type_berufstaetigen','wg_type_gemischte','wg_type_mit_kindern','wg_type_verbindung',
+                       'wg_type_lgbtqia','wg_type_senioren','wg_type_inklusive','wg_type_wg_neugruendung',
+
+                       'wg_possible',
+
+                       'internet_dsl','internet_wlan','internet_flatrate']
+
 
 
         # cols_PowerTrans_SimpImpMean
@@ -195,12 +218,22 @@ class ModelGenerator():
                                         'room_size_house_fraction','energy_usage']
             if self.target == 'price_euros':
                 self.cols_PowerTrans_SimpImpMean = self.cols_PowerTrans_SimpImpMean + ['size_sqm']
+        elif market_type_filter is None:
+            self.cols_PowerTrans_SimpImpMean = ['km_to_centroid',
+                                        'min_age_flatmates', 'max_age_flatmates', 'home_total_size', 'days_available','construction_year',
+                                        'room_size_house_fraction','energy_usage']
+            if self.target == 'price_euros':
+                self.cols_PowerTrans_SimpImpMean = self.cols_PowerTrans_SimpImpMean + ['size_sqm']
+
         else:
             self.cols_PowerTrans_SimpImpMean = ['km_to_centroid', 'days_available',
                                         'construction_year','energy_usage']
 
         # cols_PowerTrans_SimpImpMedian_MinMaxScaler
         if market_type_filter == 'WG':
+            self.cols_PowerTrans_SimpImpMedian_MinMaxScaler = features_OSM +\
+            ['capacity', 'min_age_searched', 'max_age_searched','public_transport_distance','number_languages', 'energy_efficiency_class']
+        elif market_type_filter is None:
             self.cols_PowerTrans_SimpImpMedian_MinMaxScaler = features_OSM +\
             ['capacity', 'min_age_searched', 'max_age_searched','public_transport_distance','number_languages', 'energy_efficiency_class']
         else:
@@ -210,9 +243,11 @@ class ModelGenerator():
 
         # cols_SimpImpMean_MinMaxScaler
         if market_type_filter == 'WG':
-            self.cols_SimpImpMean_MinMaxScaler = ['internet_speed','sin_degrees_to_centroid','cos_degrees_to_centroid']
+            self.cols_SimpImpMean_MinMaxScaler = ['internet_speed','sin_degrees_to_centroid','cos_degrees_to_centroid','days_since_2022']
+        elif market_type_filter is None:
+            self.cols_SimpImpMean_MinMaxScaler = ['internet_speed','sin_degrees_to_centroid','cos_degrees_to_centroid','days_since_2022']
         else:
-            self.cols_SimpImpMean_MinMaxScaler = ['sin_degrees_to_centroid','cos_degrees_to_centroid']
+            self.cols_SimpImpMean_MinMaxScaler = ['sin_degrees_to_centroid','cos_degrees_to_centroid','days_since_2022']
 
 
         # cols_SimpImpMedian_MinMaxScaler
@@ -226,6 +261,12 @@ class ModelGenerator():
                                         'schufa_needed',
                                         'building_floor', 'toilet',
                                         'furniture_numerical', 'kitchen_numerical', 'available_rooms'] + self.features_already_OHE
+        elif market_type_filter is None:
+            self.cols_SimpImpMedian_MinMaxScaler = ['commercial_landlord',
+                                                    'male_flatmates', 'female_flatmates', 'diverse_flatmates','flat_with_kids',
+                                        'schufa_needed','smoking_numerical', 'building_floor',
+                                        'furniture_numerical',
+                                        'toilet', 'kitchen_numerical', 'available_rooms'] + self.features_already_OHE
         else:
             self.cols_SimpImpMedian_MinMaxScaler = ['commercial_landlord',
                                         'schufa_needed',
@@ -239,6 +280,8 @@ class ModelGenerator():
 
         # cols_SimpImpConstNoAns_OHE
         if market_type_filter == 'WG':
+            self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','gender_searched','building_type','heating', 'parking','age_category_searched','type_offer_simple']
+        elif market_type_filter is None:
             self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','gender_searched','building_type','heating', 'parking','age_category_searched','type_offer_simple']
         else:
             self.cols_SimpImpConstNoAns_OHE = ['rental_length_term','building_type','heating', 'parking','type_offer_simple']
@@ -318,7 +361,7 @@ class ModelGenerator():
         print('=========================')
         print('Minimizing features...')
         print('\n')
-        # Define columns to be tested. Don't test the target, commercial_landlord and 'city'
+        # Define columns to be tested. Don't test the target
         cols_to_search = [col for col in df_minimal.columns if col not in [self.target]]
 
         for col in cols_to_search:
@@ -1010,8 +1053,8 @@ if __name__ == "__main__":
     didnt_work = []
     for _city in ['allcities']:# + list(dict_city_number_wggesucht.keys()):
         for _offer_type in ['WG', 'Single-room flat', 'Apartment', None]: #'WG', 'Single-room flat', 'Apartment', None
-            for _target in ['price_per_sqm_cold','price_euros']: #'price_per_sqm_cold','price_euros'
-                for _transform in [True, False]:
+            for _target in ['price_euros']: #'price_per_sqm_cold','price_euros'
+                for _transform in [True]:
                     try:
                         ModelGenerator(market_type_filter = _offer_type,
                             target=_target,
