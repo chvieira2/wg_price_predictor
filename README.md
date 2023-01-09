@@ -1,6 +1,3 @@
-Following the analysis of the WG (flatshare) market in Germany performed in [housing_crawler](https://github.com/chvieira2/housing_crawler), I decided to create a predictive model of prices. This model will then be used to decide whether the rental prices offered in [Livablestreets](https://livablestreets.herokuapp.com/) are fair. That's another step in helping people find their next home!
-
-
 ## What is the data?
 WG ads in wg-gesucht.de are collect by the [housing_crawler](https://github.com/chvieira2/housing_crawler) app since August 2022. With roughly 750 new offers posted everyday, this dataset is fast growing. Collected data include information on the size and type of WG and on physical characteristics of the flatshare.
 On top of that, I incorporate to the set of data collected per WG the life quality measurements produced by [livablestreets](https://github.com/chvieira2/livablestreets). For every address, I add information on surrounding city objects like streets, banks, stores, parks, lakes, etc.
