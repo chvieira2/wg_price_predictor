@@ -685,7 +685,7 @@ class ModelGenerator():
                                                 # 'DecisionTreeRegressor',
                                                 # 'RandomForestRegressor',
                                                 # 'GradientBoostingRegressor',
-                                                'XGBRegressor'
+                                                # 'XGBRegressor'
                                                 ]):
         """
         This function will find the best hyperparameter for several possible models.
@@ -1052,7 +1052,7 @@ if __name__ == "__main__":
 
     didnt_work = []
     for _city in ['allcities']:# + list(dict_city_number_wggesucht.keys()):
-        for _offer_type in ['WG', 'Single-room flat', 'Apartment', None]: #'WG', 'Single-room flat', 'Apartment', None
+        for _offer_type in [None, 'WG', 'Single-room flat', 'Apartment']: #'WG', 'Single-room flat', 'Apartment', None
             for _target in ['price_euros']: #'price_per_sqm_cold','price_euros'
                 for _transform in [True]:
                     try:
